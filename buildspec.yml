@@ -11,13 +11,10 @@ phases:
     commands:
       - echo Build started on `date`
       - mvn install
-      - pwd
-      - ls mps-payment-web
-      - ls mps-payment-worker
-      - zip source-bundle.zip mps-payment-web/target/mps-payment-web-1.0-SNAPSHOT.jar
   post_build:
     commands:
       - echo Build completed on %date
+      - - zip source-bundle.zip mps-payment-web/target/mps-payment-web-1.0-SNAPSHOT.jar
 artifacts:
   files:
     - mps-payment-web/target/mps-payment-web-1.0-SNAPSHOT.jar
