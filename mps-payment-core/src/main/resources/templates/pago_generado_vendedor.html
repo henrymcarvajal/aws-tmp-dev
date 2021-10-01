@@ -1,0 +1,130 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title th:text="${title}">Plantilla mejorada</title>
+    <style type="text/css">
+        body {margin: 0; padding: 0; min-width: 100%!important;}
+        img {height: auto;}
+        .content {width: 100%; max-width: 600px;}
+        .header {padding: 40px 30px 20px 30px;}
+        .innerpadding {padding: 30px 30px 30px 30px;}
+        .borderbottom {border-bottom: 1px solid #f2eeed;}
+        .subhead {font-size: 15px; color: #ffffff; font-family: sans-serif; letter-spacing: 10px;}
+        .h1, .h2, .bodycopy {color: #153643; font-family: sans-serif;}
+        .h1 {font-size: 33px; line-height: 38px; font-weight: bold;}
+        .h2 {padding: 0 0 15px 0; font-size: 24px; line-height: 28px; font-weight: bold;}
+        .bodycopy {font-size: 16px; line-height: 22px;}
+        .button {text-align: center; font-size: 18px; font-family: sans-serif; font-weight: bold; padding: 0 30px 0 30px;}
+        .button a {color: #ffffff; text-decoration: none;}
+        .footer {padding: 20px 30px 15px 30px;}
+        .footercopy {font-family: sans-serif; font-size: 14px; color: #ffffff;}
+        .footercopy a {color: #ffffff; text-decoration: underline;}
+
+        @media only screen and (max-width: 550px), screen and (max-device-width: 550px) {
+            body[yahoo] .hide {display: none!important;}
+            body[yahoo] .buttonwrapper {background-color: transparent!important;}
+            body[yahoo] .button {padding: 0px!important;}
+            body[yahoo] .button a {background-color: #e05443; padding: 15px 15px 13px!important;}
+            body[yahoo] .unsubscribe {display: block; margin-top: 20px; padding: 10px 50px; background: #2f3942; border-radius: 5px; text-decoration: none!important; font-weight: bold;}
+        }
+
+        /*@media only screen and (min-device-width: 601px) {
+          .content {width: 600px !important;}
+          .col425 {width: 425px!important;}
+          .col380 {width: 380px!important;}
+          }*/
+
+    </style>
+</head>
+
+<body yahoo="" bgcolor="#f6f8f1" style="">
+<table width="100%" bgcolor="#f6f8f1" border="0" cellpadding="0" cellspacing="0">
+    <tbody><tr>
+        <td>
+            <!--[if (gte mso 9)|(IE)]>
+            <table width="600" align="center" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td>
+            <![endif]-->
+            <table bgcolor="#ffffff" class="content" align="center" cellpadding="0" cellspacing="0" border="0">
+                <tbody><tr>
+                    <td align="center" bgcolor="#ffffff" style="padding: 40px 0 30px 0;">
+
+                        <img src="http://drive.google.com/uc?export=view&id=1WWusf1zPRUGnWStuxR2vYJk5BbNO-HG1" alt="MiPagoSeguro" width="300" height="230" style="display: block;" />
+
+                    </td>
+                </tr>
+                <tr>
+                    <td class="innerpadding borderbottom" bgcolor="#1785e2">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tbody><tr>
+                                <td class="h2">
+                                    <p style="font-size: 28px; line-height: 1.2; word-break: break-word; text-align: center; mso-line-height-alt: 34px; margin: 0;"><span style="font-size: 28px;"><strong>Proceso de pago generado! Ahora tu comprador estará mas seguro.</strong></span></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="bodycopy">
+                                    <p style="color: #ffffff;font-size: 14px; line-height: 1.5; word-break: break-word; text-align: center; mso-line-height-alt: 21px; margin: 0;">Tu solicitud fue generada exitosamente, para concretarla comparte el siguiente enlace
+                                        con el comprador:</p>
+                                    <br>
+                                    <center><a style="font-size: 14px; line-height: 1.5; word-break: break-word; text-align: center; mso-line-height-alt: 21px; margin: 0;" th:href="${link}"><input type="text" id="link" th:value="${link}" disabled></a></center>
+                                    <br>
+                                    <p style="font-size: 14px; line-height: 1.5; word-break: break-word; text-align: center; mso-line-height-alt: 21px; margin: 0;"  th:text="'El valor del pago es de ' + ${resultadoCosto}" ></p>
+                                </td>
+                            </tr>
+                            </tbody></table>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="innerpadding bodycopy">
+                        <p style="font-size: 28px; line-height: 1.2; word-break: break-word; text-align: center; mso-line-height-alt: 34px; margin: 0;"><span style="font-size: 18px;"><strong>Si tienes dudas, comunicate a traves de whatsapp, dando click en la imagen de abajo</strong></span></p>
+                        <center><a title="contactar por WhatsApp" target="_blank" class="fa fa-whatsapp" href="https://api.whatsapp.com/send?phone=573014857108"><img data-src="https://img.icons8.com/color/48/000000/whatsapp.png" class=" lazyloaded" src="https://img.icons8.com/color/48/000000/whatsapp.png"><noscript><img  data-src="https://img.icons8.com/color/48/000000/whatsapp.png" class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></noscript></a></center>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="footer" bgcolor="#44525f">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tbody><tr>
+                                <td align="center" class="footercopy">
+                                    ®MiPagoSeguro, Colombia 2020<br>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding: 20px 0 0 0;">
+                                    <table border="0" cellspacing="0" cellpadding="0">
+                                        <tbody><tr>
+                                            <td width="37" style="text-align: center; padding: 0 10px 0 10px;">
+                                                <a href="https://www.facebook.com/Mipagoseguro-100633465045107">
+                                                    <img src="http://drive.google.com/uc?export=view&id=1gF3XHj81vi1kyIK0ariTtHXbNIguWt7V" width="37" height="37" alt="Facebook" border="0">
+                                                </a>
+                                            </td>
+                                            <td width="37" style="text-align: center; padding: 0 10px 0 10px;">
+                                                <a href="https://www.instagram.com/mipagoseguro.col/?hl=es-la">
+                                                    <img src="http://drive.google.com/uc?export=view&id=1ViK6jf7ayW0jfFk57tiRhnjRw7QGMB1Z" width="37" height="37" alt="Instagram" border="0">
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        </tbody></table>
+                                </td>
+                            </tr>
+                            </tbody></table>
+                    </td>
+                </tr>
+                </tbody></table>
+            <!--[if (gte mso 9)|(IE)]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </td>
+    </tr>
+    </tbody></table>
+
+<!--analytics-->
+<script type="text/javascript" async="" src="http://www.google-analytics.com/ga.js"></script><script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="http://tutsplus.github.io/github-analytics/ga-tracking.min.js"></script>
+
+</body>
+</html>

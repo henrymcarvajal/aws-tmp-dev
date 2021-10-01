@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Bienvenido a Tutendero.co</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'/>
+    <!-- use the font -->
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            font-size: 48px;
+        }
+    </style>
+</head>
+<body>
+<img src="cid:logo.png" />
+<p th:text="${'Hola, ' + name + '!'}"></p>
+<p>
+    Te damos la bienvenida a <a href="https://mipagoseguro.co">mipagoseguro.co</a>.
+</p>
+<br/>
+<p>
+    Por favor, confirma tu dirección de correo electrónico, haciendo clic en el siguiente enlace:
+    <a th:href="@{http://{domain}/user/confirm/{id}(domain=${environment},id=${location})}">
+        <p th:text="${'http://' + environment + '/user/confirm/' + location}"></p>
+    </a>
+</p>
+<br/>
+<p>
+    Cordialmente, <br />
+    <em>El equipo de <a href="https://mipagoseguro.co">mipagoseguro.co</a></em>
+</p>
+<span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm:ss')}"></span>
+</body>
+</html>

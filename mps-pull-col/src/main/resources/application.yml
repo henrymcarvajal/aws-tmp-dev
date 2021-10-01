@@ -1,0 +1,9 @@
+security:
+  oauth2:
+    resource:
+      token-info-uri: ${SECURE_URL}
+    client:
+      client-id: b
+      client-secret: b
+server:
+  port: 8084
