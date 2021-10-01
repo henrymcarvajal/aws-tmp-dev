@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
-
-
+import java.math.BigDecimal
+import java.util.*
 
 
 @Service
@@ -116,6 +116,37 @@ class PaymentCoreClient {
                     false
                 }
                 updatePaymentState(paymentId,state, attempts + 1)
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            log.error("error calling core", e)
+            false
+        }
+    }
+
+    fun putBalanceToMerchant(merchantId: String,amount:BigDecimal , attempts: Int = 0): Boolean {
+        val paymentStateInput = PutBalanceRequest(merchantId,amount)
+        return try {
+            if(!configureCall(attempts)){
+                return false
+            }
+            val httpEntity = HttpEntity(paymentStateInput, createTokenHeader(token))
+            val paymentResponse =
+                    restTemplate.exchange("${url}merchant/balance", HttpMethod.PATCH, httpEntity, MerchantDTO::class.java)
+            if(paymentResponse.statusCode.isError){
+                log.error("payment core respoonse is an error {}",paymentResponse)
+                return false
+            }
+            true
+
+        } catch (e: HttpClientErrorException) {
+            if (403 == e.rawStatusCode) {
+                authenticate()?.let { token = it } ?: let {
+                    log.error("catch authentication failed")
+                    false
+                }
+                putBalanceToMerchant(merchantId,amount, attempts + 1)
             } else {
                 false
             }

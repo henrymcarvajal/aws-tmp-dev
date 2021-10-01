@@ -3,6 +3,7 @@ package com.mps.payment.pull.col.service
 import com.mps.payment.pull.col.client.PaymentCoreClient
 import com.mps.payment.pull.col.model.RedirectInformation
 import com.mps.payment.pull.col.repository.PaymentPartnerRepository
+import com.mps.payment.pull.col.util.createGenerateRedirectTest
 import com.mps.payment.pull.col.util.createPaymentPartner
 import com.mps.payment.pull.col.util.createPaymentTest
 import org.junit.jupiter.api.BeforeEach
@@ -90,17 +91,33 @@ internal class CashInServiceTest {
 
     @Test
     fun `create redirect payment does not exist`() {
-        val paymentId = "12345"
-        Mockito.`when`(client.getPayment(paymentId)).thenReturn(null)
-        val response = cashInService.createCashInRedirect(paymentId)
+        val request = createGenerateRedirectTest()
+        Mockito.`when`(client.getPayment(request.id)).thenReturn(null)
+        val response = cashInService.createCashInRedirect(createGenerateRedirectTest())
         Assert.isNull(response,"this is not null")
     }
 
     @Test
     fun `create redirect payment happy path`() {
-        val paymentId = "12345"
-        Mockito.`when`(client.getPayment(paymentId)).thenReturn(createPaymentTest())
-        val response = cashInService.createCashInRedirect(paymentId)
+        val request = createGenerateRedirectTest()
+        Mockito.`when`(client.getPayment(request.id)).thenReturn(createPaymentTest())
+        val response = cashInService.createCashInRedirect(request)
+        Assert.isInstanceOf(RedirectInformation::class.java, response)
+    }
+
+    @Test
+    fun `create redirect merchant payment null amount`() {
+        val request = createGenerateRedirectTest(isMerchantPayment = true)
+        Mockito.`when`(client.getPayment(request.id)).thenReturn(createPaymentTest())
+        val response = cashInService.createCashInRedirect(request)
+        Assert.isNull(response,"this is not null")
+    }
+
+    @Test
+    fun `create redirect merchant payment happy path`() {
+        val request = createGenerateRedirectTest(isMerchantPayment = true,amount = "125000")
+        Mockito.`when`(client.getPayment(request.id)).thenReturn(createPaymentTest())
+        val response = cashInService.createCashInRedirect(request)
         Assert.isInstanceOf(RedirectInformation::class.java, response)
     }
 }

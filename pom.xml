@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -10,21 +8,40 @@
         <version>2.3.4.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.mps.payment</groupId>
-    <version>1.0-SNAPSHOT</version>
-    <modules>
-        <module>mps-pull-col</module>
-        <module>mps-payment-core</module>
-        <module>mps-commons</module>
-        <module>mps-security</module>
-    </modules>
-    <packaging>pom</packaging>
     <artifactId>mps</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <kotlin.version>1.4.21</kotlin.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <spring-cloud.version>Hoxton.SR8</spring-cloud.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>spring-repo</id>
+            <name>Spring Repository</name>
+            <url>https://repo.spring.io/plugins-release/</url>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-reflect</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -34,10 +51,14 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <spring-cloud.version>Hoxton.SR8</spring-cloud.version>
-    </properties>
+
+    <modules>
+        <module>mps-commons</module>
+        <module>mps-payment-core</module>
+        <module>mps-payment-web</module>
+        <module>mps-payment-worker</module>
+        <module>mps-security</module>
+        <module>mps-pull-col</module>
+    </modules>
 
 </project>

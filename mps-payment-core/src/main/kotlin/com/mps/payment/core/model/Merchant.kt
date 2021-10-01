@@ -1,5 +1,7 @@
 package com.mps.payment.core.model
 
+import com.mps.common.dto.MerchantDTO
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 import javax.persistence.Column
@@ -27,19 +29,8 @@ data class Merchant(
         @Column(name = "id_user") var idUser: UUID?,@Column(name = "is_enable") var isEnabled: Boolean?=false,
         @Column(name = "fb_pixel") var fbPixel: String?=null,
         @Column(name = "address") var address: String?=null,
-        @Column(name = "branch_code") var branchCode: Int?=null
-)
-
-data class MerchantDTO(
-        val id: UUID?,
-        @get:NotBlank(message = NAME_NOT_NULL) val name: String="",
-        @get:NotBlank(message = NIT_NOT_NULL) val nit: String?,
-        @get:NotBlank(message = EMAIL_NOT_NULL) val email: String="",
-        @get:Pattern(regexp = PASSWORD_REGEX, message = PASSWORD_FORMAT) @get:NotBlank(message = PASSWORD_NOT_NULL) val password: String?,
-        @get:Pattern(regexp = CONTACT_REGEX, message = CONTACT_FORMAT) @get:NotBlank(message = CONTACT_NOT_NULL) val contactNumber: String="",
-        val fbPixel: String?=null,
-        val address:String?,
-        val branchCode: Int?
+        @Column(name = "branch_code") var branchCode: Int?=null,
+        @Column(name = "balance") var balance: BigDecimal = BigDecimal.ZERO
 )
 
 data class MerchantLandingtDTO(
@@ -48,7 +39,7 @@ data class MerchantLandingtDTO(
         @get:Pattern(regexp = CONTACT_REGEX, message = CONTACT_FORMAT) @get:NotBlank(message = CONTACT_NOT_NULL) val contactNumber: String
 )
 
-fun MerchantLandingtDTO.toMerchantDTO()=MerchantDTO(
+fun MerchantLandingtDTO.toMerchantDTO()= MerchantDTO(
         name=this.name, email = this.email,contactNumber = this.contactNumber,password = null, nit = null,id = null,
         address = null, branchCode = null
 )
@@ -56,7 +47,7 @@ fun MerchantLandingtDTO.toMerchantDTO()=MerchantDTO(
 fun Merchant.toDto(): MerchantDTO {
     return MerchantDTO(
             id = this.id, name = this.name, nit = this.nit, email = this.email, password = "", contactNumber = this.contactNumber.toString(),
-           fbPixel=this.fbPixel,address=this.address, branchCode= this.branchCode
+           fbPixel=this.fbPixel,address=this.address, branchCode= this.branchCode, balance = this.balance?: BigDecimal.ZERO
     )
 }
 
@@ -67,5 +58,5 @@ fun Merchant.toPublicDTO() = MerchantLandingtDTO(
 fun MerchantDTO.toEntity() = Merchant(
         id = this.id
                 ?: UUID.randomUUID(), name = this.name.trim().toLowerCase(), nit = this.nit, email = this.email.trim().toLowerCase(), contactNumber = this.contactNumber.toLong(),
-        address = this.address, branchCode = this.branchCode,idUser = null
+        address = this.address, branchCode = this.branchCode,idUser = null, balance = this.balance
 )

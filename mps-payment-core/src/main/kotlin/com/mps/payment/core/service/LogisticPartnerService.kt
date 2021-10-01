@@ -129,7 +129,7 @@ class LogisticPartnerService(private val paymentService: PaymentService,
                 order.label= response.Etiqueta
                 order.orderStatus = OrderStatus.TO_DISPATCH.state
                 orderRepository.save(order)
-                GenericResponse.SuccessResponse(order.guideNumber)
+                GenericResponse.SuccessResponse(order)
             }
             is GenericResponse.ErrorResponse -> {
                 response

@@ -2,7 +2,6 @@ package com.mps.payment.core.email
 
 import com.mps.payment.core.model.toEntity
 import com.mps.payment.core.service.TEMPLATE_EMAIL_PLANE
-import com.mps.payment.core.task.CLOSED_PAYMENT_TEMPLATE
 import com.mps.payment.core.util.createPaymentTest
 import org.junit.Ignore
 import org.junit.Test
@@ -29,18 +28,6 @@ internal class EmailSenderImplTest {
         model["link"] = "http://linkprueba.com"
         emailSender.sendEmailWithTemplate(receiver = "jorjek4@hotmail.com",
                 title = "esto es un correo de prueba",templateName = TEMPLATE_EMAIL_PLANE,o = model)
-    }
-
-    @Test
-    @Ignore
-    fun sendEmailClosedPaymentsTemplate() {
-        emailSender.sender="mipagoseguro.col@gmail.com"
-        val model = HashMap<String, Any>()
-        model["message"] = "texto de prueba de mensaje"
-        model["title_body"] = "titulo body de prueba"
-        model["closedPayments"] = listOf(createPaymentTest().toEntity())
-        emailSender.sendEmailWithTemplate(receiver = "jorjek4@hotmail.com",
-                title = "esto es un correo de prueba",templateName = CLOSED_PAYMENT_TEMPLATE,o = model)
     }
 
     @Test

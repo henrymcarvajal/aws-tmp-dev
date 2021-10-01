@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import javax.servlet.http.HttpServletResponse
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Pattern
@@ -22,9 +21,9 @@ class CashInController(private val cashInService: CashInService) {
     @PostMapping("/redirect")
     fun generateRedirect(@Valid @RequestBody generateRedirectRequest: GenerateRedirectRequest): ResponseEntity<*> {
         return try {
-            val paymentId = generateRedirectRequest.id
-            log.info("generating redirect $paymentId")
-            cashInService.createCashInRedirect(paymentId)?.let {
+
+            log.info("generating redirect ${generateRedirectRequest.id}")
+            cashInService.createCashInRedirect(generateRedirectRequest)?.let {
                 ResponseEntity.ok(it)
             } ?: let {
                 log.error("There was a problem generating redirect")
@@ -66,6 +65,6 @@ class CashInController(private val cashInService: CashInService) {
     }
 }
 
-data class GenerateRedirectRequest(@get:NotNull(message = "id is mandatory") val id: String)
+data class GenerateRedirectRequest(@get:NotNull(message = "id is mandatory") val id: String, val isMerchantPayment : Boolean=false, val amount: String?)
 data class UpdatePaymentMethodRequest(@get:NotNull(message = "paymentPartnerId is mandatory") val paymentPartnerId: String,
                                       @get:Pattern(regexp = "EFECTY|PSE|MASTERCARD|VISA", message = "Medio de pago invalido") val paymentMethod: String)

@@ -2,12 +2,14 @@ package com.mps.payment.core.service
 
 
 
-import com.mps.common.dto.GenericResponse
+import com.mps.payment.core.enum.PaymentMethod
 import com.mps.payment.core.model.QueryParams
 import com.mps.payment.core.model.toDTO
 import com.mps.payment.core.model.toEntity
 import com.mps.payment.core.repository.OrderRepository
 import com.mps.payment.core.repository.OrderRepositoryCustomImpl
+import com.mps.payment.core.service.factory.OrderProcessorFactory
+import com.mps.payment.core.service.processor.CODProcessor
 import com.mps.payment.core.util.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -32,16 +34,11 @@ internal class OrderServiceTest {
     private lateinit var logisticPartnerService: LogisticPartnerService
 
     @Mock
-    private lateinit var communicationService: CommunicationService
-
-    @Mock
     private lateinit var dropshippingSaleService: DropshippingSaleService
 
     @Mock
-    private lateinit var priceService: PriceService
+    private lateinit var orderProcessorFactory: OrderProcessorFactory
 
-    @Mock
-    private lateinit var inventoryProcessorService: InventoryProcessorService
 
     private lateinit var orderService: OrderService
 
@@ -49,100 +46,7 @@ internal class OrderServiceTest {
     fun setup() {
         MockitoAnnotations.initMocks(this)
         orderService = OrderService(orderRepository, productService, customerService,
-                logisticPartnerService,dropshippingSaleService,priceService,inventoryProcessorService,communicationService)
-    }
-
-    @Test
-    fun `product does not exist`() {
-        val orderTest = createOrderDTOTest()
-        Mockito.`when`(dropshippingSaleService.getDropshippingSaleById(orderTest.productId)).thenReturn(listOf())
-        val response = orderService.createOrder(orderTest)
-        assertTrue(response is GenericResponse.ErrorResponse)
-    }
-
-    @Test
-    fun `there is not inventory`() {
-        val orderTest = createOrderDTOTest()
-        val dropSale = createDropSateTest(productId = orderTest.productId)
-        val customerDTO = createCustomerTest()
-        orderTest.customer = customerDTO
-        val basePrice = dropSale.amount ?: dropSale.product.amount
-        Mockito.`when`(dropshippingSaleService.getDropshippingSaleById(orderTest.productId)).thenReturn(listOf(dropSale))
-        Mockito.`when`(customerService.createOrReplaceCustomer(customerDTO)).thenReturn(customerDTO.toEntity())
-        Mockito.`when`(priceService.getOrderPrice(dropSale.id,orderTest.quantity,basePrice,dropSale.specialConditions)).
-        thenReturn(BigDecimal.ZERO)
-        Mockito.`when`(inventoryProcessorService.processPrivateInventoryForOrder(customerDTO.city!!,orderTest.quantity,dropSale.product.id!!
-                ,dropSale.merchant.id!!,dropSale.product.inventory)).thenReturn(Pair(null,null))
-        val response = orderService.createOrder(orderTest)
-        assertTrue(response is GenericResponse.ErrorResponse)
-    }
-
-    @Test
-    fun `MPS payment generation failed`() {
-        val orderTest = createOrderDTOTest(paymentMethod = "MPS",orderStatus = 2)
-        val customerDTO = createCustomerTest()
-        val customer = customerDTO.toEntity()
-        val dropSaleObj = createDropSateTest(productId = orderTest.productId)
-        val basePrice = dropSaleObj.amount ?: dropSaleObj.product.amount
-        orderTest.customer = customerDTO
-        Mockito.`when`(dropshippingSaleService.getDropshippingSaleById(orderTest.productId)).thenReturn(listOf(dropSaleObj))
-        Mockito.`when`(customerService.createOrReplaceCustomer(customerDTO)).thenReturn(customer)
-        Mockito.`when`(priceService.getOrderPrice(dropSaleObj.id,orderTest.quantity,basePrice,dropSaleObj.specialConditions)).
-        thenReturn(BigDecimal.ZERO)
-        Mockito.`when`(inventoryProcessorService.processPrivateInventoryForOrder(customerDTO.city!!,orderTest.quantity,dropSaleObj.product.id!!
-                ,dropSaleObj.merchant.id!!,dropSaleObj.product.inventory)).thenReturn(Pair(12,null))
-        Mockito.`when`(productService.createPaymentFromProduct(MockitoHelper.anyObject(),MockitoHelper.anyObject(),MockitoHelper.anyObject()))
-                .thenReturn(GenericResponse.ErrorResponse("fail"))
-        Mockito.`when`(orderRepository.save(MockitoHelper.anyObject()))
-                .thenReturn(orderTest.toEntity(2, createDropSateTest(UUID.randomUUID()),customerId = UUID.randomUUID()))
-
-        val response= orderService.createOrder(orderTest)
-        assertTrue(response is GenericResponse.ErrorResponse)
-    }
-
-    @Test
-    fun `COD payment generation success`() {
-        val orderTest = createOrderDTOTest(paymentMethod = "COD",orderStatus = 2)
-        val customerDTO = createCustomerTest()
-        val customer = customerDTO.toEntity()
-        val dropSaleObj = createDropSateTest(productId = orderTest.productId)
-        val basePrice = dropSaleObj.amount ?: dropSaleObj.product.amount
-        orderTest.customer = customerDTO
-        Mockito.`when`(dropshippingSaleService.getDropshippingSaleById(orderTest.productId)).thenReturn(listOf(dropSaleObj))
-        Mockito.`when`(customerService.createOrReplaceCustomer(customerDTO)).thenReturn(customer)
-        Mockito.`when`(priceService.getOrderPrice(dropSaleObj.id,orderTest.quantity,basePrice,dropSaleObj.specialConditions)).
-        thenReturn(BigDecimal.ZERO)
-        Mockito.`when`(inventoryProcessorService.processPrivateInventoryForOrder(customerDTO.city!!,orderTest.quantity,dropSaleObj.product.id!!
-                ,dropSaleObj.merchant.id!!,dropSaleObj.product.inventory)).thenReturn(Pair(12,null))
-        Mockito.`when`(orderRepository.save(MockitoHelper.anyObject()))
-                .thenReturn(orderTest.toEntity(2, createDropSateTest(UUID.randomUUID()),customerId = UUID.randomUUID()))
-
-        val response= orderService.createOrder(orderTest)
-        assertTrue(response is GenericResponse.SuccessResponse)
-    }
-
-    @Test
-    fun `MPS payment generation success`() {
-        val orderTest = createOrderDTOTest(paymentMethod = "MPS",orderStatus = 2)
-        orderTest.paymentId="1234"
-        val customerDTO = createCustomerTest()
-        val customer = customerDTO.toEntity()
-        val dropSaleObj = createDropSateTest(productId = orderTest.productId)
-        val basePrice = dropSaleObj.amount ?: dropSaleObj.product.amount
-        orderTest.customer = customerDTO
-        Mockito.`when`(dropshippingSaleService.getDropshippingSaleById(orderTest.productId)).thenReturn(listOf(dropSaleObj))
-        Mockito.`when`(customerService.createOrReplaceCustomer(customerDTO)).thenReturn(customer)
-        Mockito.`when`(priceService.getOrderPrice(dropSaleObj.id,orderTest.quantity,basePrice,dropSaleObj.specialConditions)).
-        thenReturn(BigDecimal.ZERO)
-        Mockito.`when`(inventoryProcessorService.processPrivateInventoryForOrder(customerDTO.city!!,orderTest.quantity,dropSaleObj.product.id!!
-                ,dropSaleObj.merchant.id!!,dropSaleObj.product.inventory)).thenReturn(Pair(12,null))
-        Mockito.`when`(productService.createPaymentFromProduct(MockitoHelper.anyObject(),MockitoHelper.anyObject(),MockitoHelper.anyObject()))
-                .thenReturn(GenericResponse.SuccessResponse("1234"))
-        Mockito.`when`(orderRepository.save(MockitoHelper.anyObject()))
-                .thenReturn(orderTest.toEntity(2, createDropSateTest(UUID.randomUUID()),customerId = UUID.randomUUID()))
-
-        val response= orderService.createOrder(orderTest)
-        assertTrue(response is GenericResponse.SuccessResponse)
+                logisticPartnerService,dropshippingSaleService,orderProcessorFactory)
     }
 
     @Test
@@ -325,9 +229,11 @@ internal class OrderServiceTest {
         val order = createOrderDTOTest()
                 .toEntity(customerId = customerId,dropShippingSale = createDropSateTest())
         order.orderStatus=10
+        val processorMock = Mockito.mock(CODProcessor::class.java)
         Mockito.`when`(orderRepository.findById(orderId)).thenReturn(Optional.of(order))
         val customer = createCustomerTest(id=customerId).toEntity()
         Mockito.`when`(customerService.createOrReplaceCustomer(MockitoHelper.anyObject())).thenReturn(customer)
+        Mockito.`when`(orderProcessorFactory.selectProcessor(PaymentMethod.COD.method)).thenReturn(processorMock)
         val request = createUpdateOrderRequest(orderId)
         val response = orderService.updateOrder(request)
         assertEquals(response,customer.toDTO())
@@ -338,6 +244,7 @@ internal class OrderServiceTest {
         val orderId = UUID.randomUUID()
         val customerId = UUID.randomUUID()
         val customerIdNew = UUID.randomUUID()
+        val processorMock = Mockito.mock(CODProcessor::class.java)
         val order = createOrderDTOTest()
                 .toEntity(customerId = customerId,dropShippingSale = createDropSateTest())
         order.orderStatus = 10
@@ -345,6 +252,7 @@ internal class OrderServiceTest {
         val customer = createCustomerTest(id=customerIdNew).toEntity()
         Mockito.`when`(customerService.createOrReplaceCustomer(MockitoHelper.anyObject())).thenReturn(customer)
         Mockito.`when`(orderRepository.save(MockitoHelper.anyObject())).thenReturn(order)
+        Mockito.`when`(orderProcessorFactory.selectProcessor(PaymentMethod.COD.method)).thenReturn(processorMock)
         val request = createUpdateOrderRequest(orderId)
         val response = orderService.updateOrder(request)
         assertEquals(response?.id,customerIdNew)

@@ -4,6 +4,7 @@ import com.mps.common.dto.GenericResponse
 import com.mps.payment.core.client.entregalo.EntregaloClient
 import com.mps.payment.core.client.entregalo.EntregaloData
 import com.mps.payment.core.client.entregalo.payload.CityDTO
+import com.mps.payment.core.model.GeneralOrderDrop
 import com.mps.payment.core.model.toEntity
 import com.mps.payment.core.repository.CityRepository
 import com.mps.payment.core.repository.OrderRepository
@@ -246,7 +247,7 @@ internal class LogisticPartnerServiceTest {
                 .thenReturn(Optional.of(createMerchantTest(UUID.randomUUID()).toEntity()))
         val response = logisticPartnerService.externalRequestFreightCOD(orderId, order.dropShippingSale.merchant.id!!)
         assertTrue(response is GenericResponse.SuccessResponse)
-        assertEquals(1234, response.objP as Int)
+        assertEquals(1234, (response.objP as GeneralOrderDrop).guideNumber)
     }
 
 }

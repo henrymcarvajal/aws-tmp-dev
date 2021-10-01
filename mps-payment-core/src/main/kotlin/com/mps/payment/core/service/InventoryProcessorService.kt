@@ -72,4 +72,21 @@ class InventoryProcessorService(
         }
 
     }
+
+    fun decreaseInventoryCOD(product: Product, order: GeneralOrderDrop){
+        val privateInventory = validatePrivateInventory(product.id,order.dropShippingSale.merchant.id!!,order.quantity)
+        decreaseInventory(product,order,privateInventory)
+    }
+
+    private fun validatePrivateInventory(productId: UUID, sellerMerchantId: UUID, quantity: Int): PrivateInventory? {
+        val privateInventorySearch = privateInventoryService.findByProductIdAndSellerMerchantIdAndDisabledFalse(
+                productId,
+                sellerMerchantId
+        )
+        return if (privateInventorySearch.isPresent && quantity <= privateInventorySearch.get().quantity) {
+            privateInventorySearch.get()
+        } else {
+            null
+        }
+    }
 }

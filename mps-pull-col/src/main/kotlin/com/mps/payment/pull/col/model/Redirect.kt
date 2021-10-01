@@ -29,7 +29,8 @@ data class PaymentPartner(@Id val id: String, @Column(name = "amount") val amoun
                           @Column(name = "payment_method") var paymentMethod: String? = null,
                           @Column(name = "signature") var signature: String?=null,
                           @Column(name = "modificationdate") var modificationDate: LocalDateTime= LocalDateTime.now(),
-                          @Column(name = "final_status") var finalStatus: String?=null
+                          @Column(name = "final_status") var finalStatus: String?=null,
+                          @Column(name = "isMerchantPayment") var isMerchantPayment: Boolean=false
 ) {
     constructor() : this("", "","","") {
 

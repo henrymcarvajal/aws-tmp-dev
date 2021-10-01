@@ -1,6 +1,5 @@
 package com.mps.payment.core.service
 
-import com.mps.common.dto.GenericResponse
 import com.mps.common.dto.ServiceResponse
 import com.mps.payment.core.controller.CreatePrivateInventoryRequest
 import com.mps.payment.core.controller.UpdatePrivateInventoryRequest

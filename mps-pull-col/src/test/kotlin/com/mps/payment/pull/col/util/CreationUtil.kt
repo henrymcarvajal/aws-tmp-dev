@@ -1,6 +1,7 @@
 package com.mps.payment.pull.col.util
 
 import com.mps.common.dto.PaymentDTO
+import com.mps.payment.pull.col.controller.GenerateRedirectRequest
 import com.mps.payment.pull.col.model.PaymentPartner
 import com.mps.payment.pull.col.model.RedirectInformation
 import java.math.BigDecimal
@@ -17,4 +18,8 @@ fun createPaymentTest(merchantId: UUID = UUID.randomUUID(), id: UUID = UUID.rand
         amount = amount, id = id, idState = idState, idCustomer = UUID.randomUUID(),
         idMerchant = merchantId, linkUrl = "https://payco.link/123455",
         guideNumber = "1224455", transportCompany = "servidelivery",description = "desc"
+)
+
+fun createGenerateRedirectTest(isMerchantPayment:Boolean=false, amount:String?=null) = GenerateRedirectRequest(
+        id = "1234556",isMerchantPayment = isMerchantPayment,amount = amount
 )

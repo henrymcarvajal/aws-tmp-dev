@@ -2,12 +2,13 @@ package com.mps.payment.core.service
 
 import com.mps.common.dto.*
 import com.mps.payment.core.enum.OrderStatus
-import com.mps.payment.core.enum.PaymentMethod
 import com.mps.payment.core.model.*
 import com.mps.payment.core.repository.OrderRepository
+import com.mps.payment.core.service.factory.OrderProcessorFactory
+import com.mps.payment.core.service.processor.CODProcessor
+import com.mps.payment.core.service.processor.PreProcessOrderResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -18,7 +19,7 @@ const val SUBJECT_ORDER_GENERATION = "Consulta el estado de tu pedido"
 val FREIGHT_PRICE_PROM = BigDecimal(10000)
 
 /**
- * TODO order.productid = checkout id for drop order, we have to add extra logic for supporting no drop order
+ * TODO for own products is necessary a different table
  */
 
 @Service
@@ -28,109 +29,25 @@ class OrderService(
         private val customerService: CustomerService,
         private val logisticPartnerService: LogisticPartnerService,
         private val dropshippingSaleService: DropshippingSaleService,
-        private val priceService: PriceService,
-        private val inventoryProcessorService: InventoryProcessorService,
-        private val communicationService: CommunicationService
+        private val orderProcessorFactory: OrderProcessorFactory
 ) {
-    @Value("\${fe.url}")
-    var  url: String="htttp://test.com"
 
     val log: Logger = LoggerFactory.getLogger(this::class.java)
 
     fun createOrder(orderDropDTO: OrderDropDTO): GenericResponse<*> {
-        val dropSale = dropshippingSaleService.getDropshippingSaleById(orderDropDTO.productId)
-        if(dropSale.isEmpty()){
-            return GenericResponse.ErrorResponse("No existe el producto")
-        }
-        val customer = customerService.createOrReplaceCustomer(orderDropDTO.customer!!)
-        val orderEntity = orderDropDTO.toEntity(dropShippingSale = dropSale[0],customerId = customer.id!!)
-        orderDropDTO.id = orderEntity.id
-        orderEntity.customerId = customer.id!!
-        orderEntity.dropShippingSale = dropSale[0]
-        var merchantSeller = dropSale[0].merchant
-        val product = dropSale[0].product
-        val basePrice = dropSale[0].amount ?: product.amount
-        orderDropDTO.amount = priceService.getOrderPrice(dropSale[0].id, orderDropDTO.quantity, basePrice, dropSale[0].specialConditions)
-        orderEntity.amount = orderDropDTO.amount
-        val pairResult = inventoryProcessorService.processPrivateInventoryForOrder(customer.city!!,
-                orderDropDTO.quantity,product.id,dropSale[0].merchant.id!!,product.inventory)
-        val branchCode = pairResult.first ?: return return processPreOrderError(orderEntity, "There is not inventory")
-        orderDropDTO.branchCode = branchCode
-        orderEntity.branchCode = branchCode
-        processPayment(orderDropDTO, product, orderEntity, customer, merchantSeller)
-        val order = orderRepository.save(orderEntity)
-        return processResponse(order, product,pairResult.second)
-    }
-
-    private fun processResponse(order: GeneralOrderDrop, product: Product,privateInventory: PrivateInventory?): GenericResponse<*> {
-        if (OrderStatus.FAILED.state == order.orderStatus) {
-            return GenericResponse.ErrorResponse("Error processing order")
-        }
-        return if (PaymentMethod.COD.method == order.paymentMethod || PaymentMethod.ONLINE.method == order.paymentMethod) {
-            inventoryProcessorService.decreaseInventory(product, order,privateInventory)
-            GenericResponse.SuccessResponse(order.toDTO())
-        } else {
-            if (order.paymentMethod == PaymentMethod.MPS.method && order.paymentId.isNullOrBlank()) {
-                GenericResponse.ErrorResponse("Error generating payment from product")
-            } else {
-                inventoryProcessorService.decreaseInventory(product, order,privateInventory)
-                GenericResponse.SuccessResponse(order.paymentId)
+        val orderProcessor = orderProcessorFactory.selectProcessor(orderDropDTO.paymentMethod)
+                ?: return GenericResponse.ErrorResponse("Invalid payment method")
+        return when(val response = orderProcessor.preProcessOrder(orderDropDTO)){
+            is GenericResponse.SuccessResponse->{
+                val data = response.obj as PreProcessOrderResponse
+                val orderEntity = data.orderEntity
+                orderProcessor.process(orderDropDTO=data.orderDTO,product = data.product,generalOrderDropEntity = orderEntity,
+                customer = data.customer,sellerMerchant = data.sellerMerchant)
+                val order = orderRepository.save(orderEntity)
+                orderProcessor.postOrder(order = order,product = data.product,privateInventory = data.privateInventory)
             }
-        }
-    }
-
-    private fun processPayment(orderDropDTO: OrderDropDTO, product: Product, generalOrderDropEntity: GeneralOrderDrop,
-                               customer: Customer, sellerMerchant: Merchant) {
-        when {
-            PaymentMethod.COD.method == orderDropDTO.paymentMethod -> {
-                generalOrderDropEntity.comision = BigDecimal(650)
-                generalOrderDropEntity.orderStatus = OrderStatus.TO_BE_CONFIRMED.state
-                val urlToConfirm ="${url}customer?id=${orderDropDTO.id}"
-                val sms= "Por favor confirma tu orden abriendo el siguiente enlace: $urlToConfirm"
-                val emailMessage= "Por favor confirma tu pedido, usando el siguiente botón:"
-                val subject = "Confirma tu pedido"
-                communicationService.sendSmSAndEmail(email = customer.email,
-                        contactNumber = customer.contactNumber,smsMessage = sms,urlToConfirm,template = TEMPLATE_ORDER_CONFIRMED,
-                        emailMessage = emailMessage,title = subject,subject = subject,actionText = "Confirmar pedido"
-                )
-            }
-            PaymentMethod.MPS.method == orderDropDTO.paymentMethod -> {
-                generalOrderDropEntity.comision = BigDecimal.ZERO
-                val paymentAgree = PaymentAgree(
-                        idPayment = product.id.toString().takeLast(6),
-                        customer = customer.toDTO()
-                )
-                when (val paymentResponse = productService.createPaymentFromProduct(paymentAgree, orderDropDTO.amount,sellerMerchant.id)) {
-                    is GenericResponse.SuccessResponse -> {
-                        generalOrderDropEntity.paymentId = paymentResponse.obj as String
-                        generalOrderDropEntity.orderStatus = OrderStatus.PAYMENT_PENDING.state
-                    }
-                    is GenericResponse.ErrorResponse -> {
-                        log.error("error creating payment from product")
-                        generalOrderDropEntity.orderStatus = OrderStatus.FAILED.state
-                    }
-                }
-            }
-            PaymentMethod.ONLINE.method == orderDropDTO.paymentMethod -> {
-                generateFreight(generalOrderDropEntity, product, customer, orderDropDTO, sellerMerchant, true)
-            }
-        }
-    }
-
-    private fun generateFreight(generalOrderDropEntity: GeneralOrderDrop,
-                                product: Product, customer: Customer,
-                                orderDropDTO: OrderDropDTO, sellerMerchant: Merchant, isOnline: Boolean = false) {
-        generalOrderDropEntity.comision = BigDecimal(550)
-        when (val response = logisticPartnerService.requestFreightCOD(sellerMerchant, customer = customer, orderDropDTO,
-                product.name!!, isOnline)) {
-            is GenericResponse.SuccessResponse -> {
-                generalOrderDropEntity.label
-                generalOrderDropEntity.guideNumber = (response.obj as String).toInt()
-                generalOrderDropEntity.orderStatus = OrderStatus.TO_DISPATCH.state
-
-            }
-            is GenericResponse.ErrorResponse -> {
-                generalOrderDropEntity.orderStatus = OrderStatus.TO_DISPATCH.state
+            is GenericResponse.ErrorResponse->{
+               response
             }
         }
     }
@@ -145,11 +62,6 @@ class OrderService(
 
     fun findByPaymentId(paymentId: String) = orderRepository.getByPaymentId(paymentId)
 
-    private fun processPreOrderError(generalOrderDropEntity: GeneralOrderDrop, message: String): GenericResponse.ErrorResponse {
-        generalOrderDropEntity.orderStatus = OrderStatus.FAILED.state
-        orderRepository.save(generalOrderDropEntity)
-        return GenericResponse.ErrorResponse(message)
-    }
 
     fun getOrdersForProvider(merchantId: UUID, queryParams: QueryParams): OrderViewConsolidate {
         val dropProducts = productService.getDropProductsForMerchant(merchantId)
@@ -281,6 +193,8 @@ class OrderService(
             existingOrder = orderRepository.save(existingOrder)
         }
         logisticPartnerService.generateFreightByOrder(order = existingOrder,customer = customer)
+        val processor = orderProcessorFactory.selectProcessor(existingOrder.paymentMethod)!! as CODProcessor
+        processor.confirmationProcess(existingOrder)
         return customer.toDTO()
     }
 
@@ -329,5 +243,5 @@ class OrderService(
 
     fun findById(id: UUID) = orderRepository.findById(id)
 
-    fun saveAll(order: List<GeneralOrderDrop>) = orderRepository.saveAll(order)
+    fun saveAll(order: List<GeneralOrderDrop>): MutableIterable<GeneralOrderDrop> = orderRepository.saveAll(order)
 }

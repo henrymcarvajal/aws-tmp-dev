@@ -1,12 +1,14 @@
 package com.mps.payment.core.service
 
 import com.mps.common.dto.GenericResponse
-import com.mps.payment.core.enum.AccountTypeEnum
-import com.mps.payment.core.enum.BankEnum
+import com.mps.common.dto.MerchantDTO
+import com.mps.common.dto.PutBalanceRequest
 import com.mps.payment.core.enum.PaymentStateEnum
 import com.mps.payment.core.model.*
 import com.mps.payment.core.repository.MerchantRepository
 import com.mps.payment.core.repository.PaymentRepository
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,6 +30,8 @@ class MerchantService(
         private val paymentRepository: PaymentRepository
 ) {
 
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+
     @Transactional
     fun createMerchant(merchantDTO: MerchantDTO): GenericResponse<*> {
         if (merchantRepository.existsByEmail(merchantDTO.email)) {
@@ -39,7 +43,7 @@ class MerchantService(
             }
         }
         merchantDTO.nit?.let {
-            merchantRepository.findMerchantByNit(merchantDTO.nit)?.let {
+            merchantRepository.findMerchantByNit(merchantDTO.nit.toString())?.let {
                 return GenericResponse.ErrorResponse(NIT_ALREADY_EXISTS)
             }
         }
@@ -93,6 +97,20 @@ class MerchantService(
         }
     }
 
+    @Transactional
+    fun putBalance(putBalanceRequest: PutBalanceRequest):GenericResponse<*>{
+        val merchant = findMerchantByShortId(putBalanceRequest.merchantId)
+        return if(merchant==null){
+            log.error(MERCHANT_NOT_EXISTS)
+            GenericResponse.ErrorResponse(MERCHANT_NOT_EXISTS)
+        }else{
+            merchant.balance = merchant.balance+putBalanceRequest.amount
+            val newMerchant = merchantRepository.save(merchant).toDto()
+            log.error("Updated done")
+            GenericResponse.SuccessResponse(newMerchant)
+        }
+    }
+
     private fun createUser(merchantDTO: MerchantDTO) : User? {
         val user = User(null,merchantDTO.name.trim().toLowerCase(), merchantDTO.email.trim().toLowerCase(),
                 merchantDTO.password?:null, "ROLE_MERCHANT")
@@ -127,4 +145,11 @@ class MerchantService(
     fun findByIdOrNull(id: UUID) = merchantRepository.findByIdOrNull(id)
 
     fun findByEmail(email: String) = merchantRepository.findByEmail(email)
+
+    fun findMerchantByShortId(id:String):Merchant?{
+        if(id.isBlank()){
+            return null
+        }
+        return merchantRepository.getMerchantByShortId(id)
+    }
 }
