@@ -14,6 +14,7 @@ phases:
       - pwd
       - ls mps-payment-web
       - ls mps-payment-worker
+      - zip
   post_build:
     commands:
       - echo Build completed on %date
