@@ -9,11 +9,11 @@ phases:
       - echo Nothing to do in the pre_build phase...
   build:
     commands:
-      - echo Build started on `date`
+      - echo "Build started on $(date)"
       - mvn -pl .,mps-payment-web clean install
   post_build:
     commands:
-      - echo Build completed on %date
+      - echo "Build completed on $(date)"
       - mv mps-payment-web/target/mps-payment-web-1.0-SNAPSHOT.jar mps-payment-web-1.0-SNAPSHOT.jar
 artifacts:
   files:
